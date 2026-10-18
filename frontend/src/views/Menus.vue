@@ -8,7 +8,7 @@ const menus = ref([]);
 const currentId = ref(0);
 const appVisible = ref(false);
 const menuVisible = ref(false);
-const appForm = reactive({ id: 0, code: '', name: '', sortOrder: 0 });
+const appForm = reactive({ id: 0, code: '', name: '', sortOrder: 0, entryUrl: '' });
 const menuForm = reactive({
   id: 0, parentId: 0, name: '', path: '', permission: '', menuType: 'menu', sortOrder: 0, status: 1,
 });
@@ -45,6 +45,7 @@ function openApp(app) {
   appForm.code = app?.code || '';
   appForm.name = app?.name || '';
   appForm.sortOrder = app?.sortOrder || apps.value.length + 1;
+  appForm.entryUrl = app?.entryUrl || '';
   appVisible.value = true;
 }
 
@@ -152,6 +153,9 @@ onMounted(loadApps);
         <el-form-item label="编码"><el-input v-model="appForm.code" :disabled="!!appForm.id" /></el-form-item>
         <el-form-item label="名称"><el-input v-model="appForm.name" /></el-form-item>
         <el-form-item label="排序"><el-input-number v-model="appForm.sortOrder" /></el-form-item>
+        <el-form-item label="首页">
+          <el-input v-model="appForm.entryUrl" placeholder="http://127.0.0.1:5173/，留空表示不跳转" />
+        </el-form-item>
       </el-form>
       <template #footer>
         <el-button type="primary" color="#1f1c19" @click="saveApp">保存</el-button>

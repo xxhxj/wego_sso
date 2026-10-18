@@ -22,10 +22,6 @@ function logout() {
   clearToken();
   router.push('/login?logout=1');
 }
-
-function openMockup() {
-  location.assign('http://127.0.0.1:5173/');
-}
 </script>
 
 <template>
@@ -46,7 +42,7 @@ function openMockup() {
     </aside>
     <section class="main">
       <header class="top">
-        <el-button @click="openMockup">打开包装样机</el-button>
+        <span>已登录的系统从「系统列表」进入</span>
         <div>
           <span style="margin-right: 12px">{{ nickname }}</span>
           <el-button link @click="logout">退出</el-button>

@@ -88,6 +88,28 @@ authRouter.post('/membership', requireAuth, async (req, res, next) => {
   }
 });
 
+authRouter.get('/apps', requireAuth, async (req, res, next) => {
+  try {
+    const admin = await isAdmin(req.user.id);
+    const sql = admin
+      ? `SELECT id, code, name, entry_url AS entryUrl, sort_order AS sortOrder
+         FROM sys_app
+         WHERE status = 1
+         ORDER BY sort_order, id`
+      : `SELECT DISTINCT a.id, a.code, a.name, a.entry_url AS entryUrl, a.sort_order AS sortOrder
+         FROM sys_app a
+         JOIN sys_menu m ON m.app_id = a.id AND m.status = 1
+         JOIN sys_role_menu rm ON rm.menu_id = m.id
+         JOIN sys_user_role ur ON ur.role_id = rm.role_id
+         WHERE a.status = 1 AND ur.user_id = ?
+         ORDER BY a.sort_order, a.id`;
+    const [rows] = await pool.query(sql, admin ? [] : [req.user.id]);
+    res.json({ data: rows });
+  } catch (error) {
+    next(error);
+  }
+});
+
 authRouter.get('/menus', requireAuth, async (req, res, next) => {
   const appCode = String(req.query.app || 'sso');
   try {

@@ -9,7 +9,8 @@ const statements = [
     code VARCHAR(64) NOT NULL UNIQUE,
     name VARCHAR(128) NOT NULL,
     sort_order INT NOT NULL DEFAULT 0,
-    status TINYINT NOT NULL DEFAULT 1
+    status TINYINT NOT NULL DEFAULT 1,
+    entry_url VARCHAR(255) NULL
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
   `CREATE TABLE IF NOT EXISTS sys_user (
     id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -78,6 +79,7 @@ const statements = [
 ];
 
 const menuSeed = [
+  { key: 'portal', app: 'sso', parent: '', name: '系统列表', path: '/systems', permission: '', type: 'menu', sort: 0 },
   { key: 'system', app: 'sso', parent: '', name: '系统管理', path: '/system', permission: '', type: 'dir', sort: 1 },
   { key: 'users', app: 'sso', parent: 'system', name: '用户管理', path: '/users', permission: 'user:list', type: 'menu', sort: 1 },
   { key: 'roles', app: 'sso', parent: 'system', name: '角色配置', path: '/roles', permission: 'role:list', type: 'menu', sort: 2 },
@@ -106,11 +108,11 @@ async function ensureDatabase() {
   await connection.end();
 }
 
-async function upsertApp(code, name, sortOrder) {
+async function upsertApp(code, name, sortOrder, entryUrl = '') {
   await pool.execute(
-    `INSERT INTO sys_app (code, name, sort_order, status) VALUES (?, ?, ?, 1)
-     ON DUPLICATE KEY UPDATE name = VALUES(name), sort_order = VALUES(sort_order)`,
-    [code, name, sortOrder],
+    `INSERT INTO sys_app (code, name, sort_order, status, entry_url) VALUES (?, ?, ?, 1, ?)
+     ON DUPLICATE KEY UPDATE name = VALUES(name), sort_order = VALUES(sort_order), entry_url = VALUES(entry_url)`,
+    [code, name, sortOrder, entryUrl || null],
   );
   const [rows] = await pool.query('SELECT id FROM sys_app WHERE code = ?', [code]);
   return rows[0].id;
@@ -145,10 +147,15 @@ async function seed() {
   } catch (error) {
     if (error.errno !== 1060) throw error;
   }
+  try {
+    await pool.query('ALTER TABLE sys_app ADD COLUMN entry_url VARCHAR(255) NULL');
+  } catch (error) {
+    if (error.errno !== 1060) throw error;
+  }
   const apps = {
-    sso: await upsertApp('sso', '单点登录', 1),
-    'wego-mockup': await upsertApp('wego-mockup', '包装样机', 2),
-    'wego-cad': await upsertApp('wego-cad', '三维建模', 3),
+    sso: await upsertApp('sso', '单点登录', 1, ''),
+    'wego-mockup': await upsertApp('wego-mockup', '包装样机', 2, 'http://127.0.0.1:5173/'),
+    'wego-cad': await upsertApp('wego-cad', '三维建模', 3, 'http://127.0.0.1:5175/'),
   };
   const ids = {};
   for (const item of menuSeed) {

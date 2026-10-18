@@ -145,3 +145,44 @@ body { background: #f4f1ec; }
   border-color: #1f1c19;
   background: #f7f3ee;
 }
+
+.system-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.system-card {
+  text-align: left;
+  border: 1px solid #ece7e0;
+  background: #fff;
+  border-radius: 14px;
+  padding: 16px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.system-card b { font-size: 16px; }
+
+.system-card span,
+.system-card small { color: #7a756e; font-size: 12px; }
+
+.system-card small { word-break: break-all; }
+
+.system-card em {
+  margin-top: 8px;
+  font-style: normal;
+  color: #1f1c19;
+  font-size: 13px;
+}
+
+.system-card.current {
+  cursor: default;
+  background: #f7f3ee;
+}
+
+.system-card:not(:disabled):hover {
+  border-color: #1f1c19;
+}

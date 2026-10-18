@@ -31,6 +31,7 @@ export const api = {
   login: (body) => request('/api/auth/login', { method: 'POST', body: JSON.stringify(body) }),
   me: () => request('/api/auth/me'),
   menus: (app) => request(`/api/auth/menus?app=${encodeURIComponent(app)}`),
+  portals: () => request('/api/auth/apps'),
   users: () => request('/api/users'),
   saveUser: (id, body) => request(id ? `/api/users/${id}` : '/api/users', {
     method: id ? 'PUT' : 'POST',

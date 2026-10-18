@@ -8,10 +8,24 @@ menusRouter.use(operationLogger('菜单配置'));
 
 const protectedApps = new Set(['sso', 'wego-mockup']);
 
+function normalizeEntryUrl(value) {
+  const text = String(value || '').trim();
+  if (!text) return { value: null };
+  try {
+    const url = new URL(text);
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+      return { error: '访问地址只支持 http 或 https' };
+    }
+    return { value: text };
+  } catch {
+    return { error: '访问地址需要是完整网址，例如 http://127.0.0.1:5173/' };
+  }
+}
+
 menusRouter.get('/apps', async (_req, res, next) => {
   try {
     const [rows] = await pool.query(
-      'SELECT id, code, name, sort_order AS sortOrder, status FROM sys_app ORDER BY sort_order, id',
+      'SELECT id, code, name, entry_url AS entryUrl, sort_order AS sortOrder, status FROM sys_app ORDER BY sort_order, id',
     );
     res.json({ data: rows });
   } catch (error) {
@@ -23,11 +37,13 @@ menusRouter.post('/apps', async (req, res, next) => {
   const code = String(req.body?.code || '').trim();
   const name = String(req.body?.name || '').trim();
   const sortOrder = Number(req.body?.sortOrder || 0);
+  const entryUrl = normalizeEntryUrl(req.body?.entryUrl);
   if (!code || !name) return res.status(400).json({ message: '系统编码和名称不能为空' });
+  if (entryUrl.error) return res.status(400).json({ message: entryUrl.error });
   try {
     const [result] = await pool.execute(
-      'INSERT INTO sys_app (code, name, sort_order, status) VALUES (?, ?, ?, 1)',
-      [code, name, sortOrder],
+      'INSERT INTO sys_app (code, name, sort_order, status, entry_url) VALUES (?, ?, ?, 1, ?)',
+      [code, name, sortOrder, entryUrl.value],
     );
     res.json({ id: result.insertId });
   } catch (error) {
@@ -40,12 +56,15 @@ menusRouter.put('/apps/:id', async (req, res, next) => {
   const name = String(req.body?.name || '').trim();
   const sortOrder = Number(req.body?.sortOrder || 0);
   const status = req.body?.status === 0 ? 0 : 1;
+  const entryUrl = normalizeEntryUrl(req.body?.entryUrl);
   if (!name) return res.status(400).json({ message: '系统名称不能为空' });
+  if (entryUrl.error) return res.status(400).json({ message: entryUrl.error });
   try {
-    await pool.execute('UPDATE sys_app SET name = ?, sort_order = ?, status = ? WHERE id = ?', [
+    await pool.execute('UPDATE sys_app SET name = ?, sort_order = ?, status = ?, entry_url = ? WHERE id = ?', [
       name,
       sortOrder,
       status,
+      entryUrl.value,
       Number(req.params.id),
     ]);
     res.json({ ok: true });

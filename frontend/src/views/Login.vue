@@ -28,7 +28,7 @@ async function enter(token) {
   if (safeRedirect(token)) return;
   const menus = await api.menus('sso');
   if (menus.data?.length) {
-    await router.push('/users');
+    await router.push('/systems');
     return;
   }
   const cad = await api.menus('wego-cad');
