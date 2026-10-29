@@ -90,7 +90,6 @@ const menuSeed = [
   { key: 'mockupRoot', app: 'wego-mockup', parent: '', name: '包装样机', path: '', permission: '', type: 'dir', sort: 1 },
   { key: 'edit', app: 'wego-mockup', parent: 'mockupRoot', name: '编辑', path: 'edit', permission: 'mockup:edit', type: 'menu', sort: 1 },
   { key: 'mockup', app: 'wego-mockup', parent: 'mockupRoot', name: '样机', path: 'mockup', permission: 'mockup:view', type: 'menu', sort: 2 },
-  { key: 'upload', app: 'wego-mockup', parent: 'mockupRoot', name: '3D模型上传', path: 'upload', permission: 'mockup:upload', type: 'menu', sort: 3 },
   { key: 'cadRoot', app: 'wego-cad', parent: '', name: '三维建模', path: '', permission: '', type: 'dir', sort: 1 },
   { key: 'workspace', app: 'wego-cad', parent: 'cadRoot', name: '工作区', path: 'workspace', permission: 'cad:model', type: 'menu', sort: 1 },
   { key: 'tutorials', app: 'wego-cad', parent: 'cadRoot', name: '教程', path: 'tutorials', permission: 'cad:tutorial', type: 'menu', sort: 2 },
@@ -193,11 +192,18 @@ async function seed() {
     'INSERT INTO sys_user_role (user_id, role_id) VALUES (?, ?), (?, ?), (?, ?)',
     [adminUser, adminRole, designerUser, designerRole, makerUser, makerRole],
   );
+  const [removedMenus] = await pool.query(
+    "SELECT id FROM sys_menu WHERE permission = 'mockup:upload' OR (path = 'upload' AND name = '3D模型上传')",
+  );
+  for (const menu of removedMenus) {
+    await pool.execute('DELETE FROM sys_role_menu WHERE menu_id = ?', [menu.id]);
+    await pool.execute('DELETE FROM sys_menu WHERE id = ?', [menu.id]);
+  }
   const [menus] = await pool.query('SELECT id, app_id, permission FROM sys_menu');
   await pool.execute('DELETE FROM sys_role_menu WHERE role_id IN (?, ?, ?)', [adminRole, designerRole, makerRole]);
   for (const menu of menus) {
     await pool.execute('INSERT INTO sys_role_menu (role_id, menu_id) VALUES (?, ?)', [adminRole, menu.id]);
-    if (menu.app_id === apps['wego-mockup'] && menu.permission !== 'mockup:upload') {
+    if (menu.app_id === apps['wego-mockup']) {
       await pool.execute('INSERT INTO sys_role_menu (role_id, menu_id) VALUES (?, ?)', [designerRole, menu.id]);
     }
     if (menu.app_id === apps['wego-cad']) {
